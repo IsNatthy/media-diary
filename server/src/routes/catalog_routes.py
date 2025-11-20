@@ -1,0 +1,1 @@
+# CatalogRoutes - Endpoints de catálogo público (GET /api/catalog)

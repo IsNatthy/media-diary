@@ -1,0 +1,1 @@
+# Factory de la app Flask - create_app() con configuración de sesiones, CORS y blueprints

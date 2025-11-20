@@ -1,0 +1,1 @@
+# CatalogService - Gestión de catálogo predefinido de películas/series

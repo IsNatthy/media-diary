@@ -1,0 +1,1 @@
+# AuthRoutes - Endpoints de autenticación (POST /auth/register, /auth/login, /auth/logout, GET /auth/me)

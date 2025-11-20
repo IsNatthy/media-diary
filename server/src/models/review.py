@@ -1,0 +1,1 @@
+# Modelo Review - Comentarios de usuarios sobre contenido (content_id FK, user_id FK, text)

@@ -1,0 +1,1 @@
+# LibraryService - CRUD de biblioteca personal del usuario + validación ownership

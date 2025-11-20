@@ -1,0 +1,1 @@
+# Modelo Content - Clase base abstracta para Movie y Series (herencia polimórfica)

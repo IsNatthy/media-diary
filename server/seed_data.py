@@ -1,0 +1,1 @@
+# Script para poblar la base de datos con datos de prueba (usuarios, catálogo, contenido)

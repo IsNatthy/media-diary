@@ -1,0 +1,1 @@
+# UserRepository - Queries de usuarios (find_by_username, create, etc.)

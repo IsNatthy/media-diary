@@ -1,0 +1,1 @@
+# Modelo Series - Serie de TV, hereda de Content (campos: current_season, current_episode, total_episodes)

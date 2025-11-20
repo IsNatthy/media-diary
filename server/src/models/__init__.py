@@ -1,0 +1,1 @@
+# Modelos POO con SQLAlchemy - User, Content (base), Movie, Series, Review

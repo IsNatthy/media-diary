@@ -1,0 +1,1 @@
+# Modelo Movie - Película, hereda de Content (campos: genre, duration)

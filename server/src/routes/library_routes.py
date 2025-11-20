@@ -1,0 +1,1 @@
+# LibraryRoutes - Endpoints de biblioteca personal (GET/POST/PUT/DELETE /api/library)

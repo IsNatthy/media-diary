@@ -1,0 +1,1 @@
+# ReviewRepository - Queries de comentarios (find_by_content, create, delete)
