@@ -1,7 +1,7 @@
 from flask import Flask
 from .database.db import init_db
-from .routes.movie_routes import movie_bp
-from .routes.series_routes import series_bp
+from .routes.movieRoutes import movie_bp
+from .routes.seriesRoutes import series_bp
 
 def create_app():
     app = Flask(__name__)
