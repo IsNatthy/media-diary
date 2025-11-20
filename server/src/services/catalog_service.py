@@ -1,1 +1,13 @@
 # CatalogService - Gestión de catálogo predefinido de películas/series
+
+from app.src.repositories.content_repository import ContentRepository
+
+class CatalogService:
+    def __init__(self):
+        self.repo = ContentRepository()
+
+    def list_content(self):
+        return self.repo.get_all_content()
+    
+    def get_content(self, content_id):
+        return self.repo.get_content_by_id(content_id)
