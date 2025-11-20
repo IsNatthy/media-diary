@@ -1,7 +1,5 @@
 import sqlite3
 
-app = Flask(__name__)
-
 DB_path = 'database.db' #Cambiar luego
 
 # Inicializar la conexion a la base de datos
@@ -15,7 +13,7 @@ def init_db():
         year INTEGER NOT NULL,
         type TEXT NOT NULL,
         genre TEXT NOT NULL,
-        state TEXT NOT NULL,
+        state TEXT NOT NULL
         )
     ''')
 
