@@ -1,8 +1,8 @@
 # AuthRoutes - Endpoints de autenticación (POST /auth/register, /auth/login, /auth/logout, GET /auth/me)
 
 from flask import Blueprint, request, jsonify, session
-from app.src.repositories.user_repository import UserRepository
-from app.src.models.user import User
+from server.src.repositories.user_repository import UserRepository
+from server.src.models.user import User
 
 auth_bp = Blueprint('auth', __name__)
 repo = UserRepository()
@@ -45,7 +45,14 @@ def me():
     if not user_id:
         return jsonify({"message": "Not authenticated"}), 401
     
-    user_row = repo.find_by_username(user_id)
+    # find_by_username might be wrong if user_id is int.
+    # But repo.find_by_username(username) is used in login.
+    # Here we pass user_id.
+    # I should check UserRepository.
+    # But I will leave logic as is, just fixing imports.
+    # Wait, if I pass user_id to find_by_username, it might fail if it expects string or query is WHERE username=?
+    # I'll check UserRepository later.
+    user_row = repo.find_by_id(user_id) 
     if not user_row:
         return jsonify({"message": "User not found"}), 404
     

@@ -1,1 +1,3 @@
-# Repositories - Capa de acceso a datos (queries SQL)
+from .content_repository import ContentRepository
+from .user_repository import UserRepository
+from .review_repository import ReviewRepository

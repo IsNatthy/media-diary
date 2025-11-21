@@ -1,4 +1,4 @@
-from app.src.config.database import DatabaseConnection
+from server.src.config.database import DatabaseConnection
 
 class BaseRepository:
     def connect(self):

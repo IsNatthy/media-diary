@@ -1,14 +1,14 @@
 # ContentRepository - Queries de contenido (find_by_user, create, update, delete)
 
-from app.src.repository.base_repository import BaseRepository
-from app.src.models.content import Content
+from server.src.repositories.base_repository import BaseRepository
+from server.src.models.content import Content
 
 class ContentRepository(BaseRepository):
 
     def get_all(self):
         conn = self.connect()
         cursor = conn.cursor()
-        cursor.execute("SELECT id, title, genre, year, type, state  * FROM content")
+        cursor.execute("SELECT * FROM content")
         rows = cursor.fetchall()
         conn.close()
         return rows
@@ -16,7 +16,7 @@ class ContentRepository(BaseRepository):
     def get_by_id(self, content_id):
         conn = self.connect()
         cursor = conn.cursor()
-        cursor.execute("SELECT id, title, genre, year, type, state * FROM content WHERE id = ?", (content_id,))
+        cursor.execute("SELECT * FROM content WHERE id = ?", (content_id,))
         row = cursor.fetchone()
         conn.close()
         return row
@@ -24,7 +24,7 @@ class ContentRepository(BaseRepository):
     def find_by_user(self, user_id):
         conn = self.connect()
         cursor = conn.cursor()
-        cursor.execute("SELECT id, title, genre, year, type, state * FROM content WHERE user_id = ?", (user_id,))
+        cursor.execute("SELECT * FROM content WHERE user_id = ?", (user_id,))
         rows = cursor.fetchall()
         conn.close()
         return rows
