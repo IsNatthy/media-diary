@@ -3,7 +3,10 @@
 
 import sqlite3
 
-BD_PATH = 'app/src/config/database.db'
+import os
+
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+BD_PATH = os.path.join(BASE_DIR, 'database.db')
 
 class DatabaseConnection:
     @staticmethod
