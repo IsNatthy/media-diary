@@ -1,58 +1,30 @@
 # ContentRepository - Queries de contenido (find_by_user, create, update, delete)
+from sqlalchemy.orm import Session
+from src.models.content import Content
+from src.models.movie import Movie
+from src.models.series import Series
 
-from server.src.repositories.base_repository import BaseRepository
-from server.src.models.content import Content
+class ContentRepository:
+    def __init__(self, db: Session):
+        self.db = db
 
-class ContentRepository(BaseRepository):
+    def find_by_user(self, user_id: int):
+        return self.db.query(Content).filter(Content.user_id == user_id).all()
 
-    def get_all(self):
-        conn = self.connect()
-        cursor = conn.cursor()
-        cursor.execute("SELECT * FROM content")
-        rows = cursor.fetchall()
-        conn.close()
-        return rows
-
-    def get_by_id(self, content_id):
-        conn = self.connect()
-        cursor = conn.cursor()
-        cursor.execute("SELECT * FROM content WHERE id = ?", (content_id,))
-        row = cursor.fetchone()
-        conn.close()
-        return row
-
-    def find_by_user(self, user_id):
-        conn = self.connect()
-        cursor = conn.cursor()
-        cursor.execute("SELECT * FROM content WHERE user_id = ?", (user_id,))
-        rows = cursor.fetchall()
-        conn.close()
-        return rows
+    def find_by_id(self, content_id: int):
+        return self.db.query(Content).filter(Content.id == content_id).first()
     
-    def create(self, content: Content, user_id):
-        conn = self.connect()
-        cursor = conn.cursor()
-        cursor.execute('''
-            INSERT INTO content (title, year, type, genre, state, user_id)
-            VALUES (?, ?, ?, ?, ?, ?)
-        ''', (content.title, content.year, content.type, content.genre, content.state, user_id))
-        conn.commit()
-        conn.close()
+    def create(self, content: Content):
+        self.db.add(content)
+        self.db.commit()
+        self.db.refresh(content)
+        return content
     
-    def update(self, content_id, data):
-        conn = self.connect()
-        cursor = conn.cursor()
-        cursor.execute('''
-            UPDATE content
-            SET state = ?
-            WHERE id = ?
-        ''', (data['state'], content_id))
-        conn.commit()
-        conn.close()
+    def update(self, content: Content):
+        self.db.commit()
+        self.db.refresh(content)
+        return content
 
-    def delete(self, content_id):
-        conn = self.connect()
-        cursor = conn.cursor()
-        cursor.execute('DELETE FROM content WHERE id = ?', (content_id,))
-        conn.commit()
-        conn.close()
+    def delete(self, content: Content):
+        self.db.delete(content)
+        self.db.commit()

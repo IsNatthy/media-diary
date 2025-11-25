@@ -1,14 +1,17 @@
 import { useState } from 'react';
 import { Search, Plus } from 'lucide-react';
 
-export default function CatalogView({ catalog, onAddFromCatalog, userMediaIds }) {
+export default function CatalogView({ catalog, onAddFromCatalog, userMedia }) {
   const [searchTerm, setSearchTerm] = useState('');
 
   const filteredCatalog = catalog.filter((item) =>
     item.title.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  const isAdded = (id) => userMediaIds.includes(id);
+  const isAdded = (item) => userMedia.some(userItem => 
+    userItem.title.toLowerCase() === item.title.toLowerCase() && 
+    userItem.year === item.year
+  );
 
   return (
     <div className="space-y-6">
@@ -48,7 +51,7 @@ export default function CatalogView({ catalog, onAddFromCatalog, userMediaIds })
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {filteredCatalog.map((item) => {
-              const added = isAdded(item.id);
+              const added = isAdded(item);
               return (
                 <div
                   key={item.id}

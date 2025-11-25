@@ -1,6 +1,6 @@
-import { Film, Plus, Library, TrendingUp } from 'lucide-react';
+import { Film, Plus, Library, TrendingUp, LogOut, User } from 'lucide-react';
 
-export default function Layout({ children, currentView, onViewChange }) {
+export default function Layout({ children, currentView, onViewChange, currentUser, onLogout }) {
   const navItems = [
     { id: 'library', label: 'Mi Biblioteca', icon: Library },
     { id: 'trending', label: 'Catálogo', icon: TrendingUp },
@@ -41,13 +41,31 @@ export default function Layout({ children, currentView, onViewChange }) {
               })}
             </div>
 
-            <button
-              onClick={() => onViewChange('add')}
-              className="flex items-center space-x-2 bg-gradient-to-r from-green-600 to-green-700 text-white px-4 py-2 rounded-lg font-medium hover:from-green-700 hover:to-green-800 transition-all duration-200 shadow-md hover:shadow-lg"
-            >
-              <Plus className="w-4 h-4" />
-              <span>Agregar</span>
-            </button>
+            <div className="flex items-center space-x-3">
+              <button
+                onClick={() => onViewChange('add')}
+                className="flex items-center space-x-2 bg-gradient-to-r from-green-600 to-green-700 text-white px-4 py-2 rounded-lg font-medium hover:from-green-700 hover:to-green-800 transition-all duration-200 shadow-md hover:shadow-lg"
+              >
+                <Plus className="w-4 h-4" />
+                <span>Agregar</span>
+              </button>
+
+              {currentUser && (
+                <div className="flex items-center space-x-2 border-l border-slate-200 pl-3">
+                  <div className="flex items-center space-x-2 text-slate-700">
+                    <User className="w-4 h-4" />
+                    <span className="text-sm font-medium">{currentUser.username}</span>
+                  </div>
+                  <button
+                    onClick={onLogout}
+                    className="flex items-center space-x-1 px-3 py-2 text-slate-600 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all duration-200"
+                    title="Cerrar sesión"
+                  >
+                    <LogOut className="w-4 h-4" />
+                  </button>
+                </div>
+              )}
+            </div>
           </div>
         </div>
       </nav>

@@ -1,55 +1,79 @@
 # LibraryRoutes - Endpoints de biblioteca personal (GET/POST/PUT/DELETE /api/library)
 
 from flask import Blueprint, jsonify, request, session
-from server.src.services.library_service import LibraryService
-from server.src.services.catalog_service import CatalogService
+from src.config.database import get_db
+from src.services.library_service import LibraryService
 
 library_bp = Blueprint('library', __name__)
-
-catalog_service = CatalogService()
 
 @library_bp.get('/')
 def list_library():
     user_id = session.get('user_id')
     if not user_id:
-        return jsonify({"message": "Not authenticated"}), 401
+        return jsonify({"message": "No autenticado"}), 401
 
-    library_service = LibraryService(catalog_service, user_id)
-    library_content = library_service.list_library()
-    return jsonify(library_content), 200
+    db = next(get_db())
+    service = LibraryService(db)
+    
+    try:
+        contents = service.get_user_library(user_id)
+        return jsonify([c.to_dict() for c in contents]), 200
+    finally:
+        db.close()
 
-@library_bp.post('/<int:content_id>')
-def add_to_library(content_id):
+@library_bp.post('/')
+def add_content():
     user_id = session.get('user_id')
     if not user_id:
-        return jsonify({"message": "Not authenticated"}), 401
+        return jsonify({"message": "No autenticado"}), 401
 
-    library_service = LibraryService(catalog_service, user_id)
+    data = request.json
+    db = next(get_db())
+    service = LibraryService(db)
+    
     try:
-        content = library_service.add_to_library(content_id)
-        return jsonify(content.__dict__), 201
+        content = service.add_content(user_id, data)
+        return jsonify(content.to_dict()), 201
+    except ValueError as e:
+        return jsonify({"message": str(e)}), 400
+    finally:
+        db.close()
+
+@library_bp.put('/<int:content_id>')
+def update_content(content_id):
+    user_id = session.get('user_id')
+    if not user_id:
+        return jsonify({"message": "No autenticado"}), 401
+
+    data = request.json
+    db = next(get_db())
+    service = LibraryService(db)
+    
+    try:
+        content = service.update_content(user_id, content_id, data)
+        return jsonify(content.to_dict()), 200
     except ValueError as e:
         return jsonify({"message": str(e)}), 404
+    except PermissionError as e:
+        return jsonify({"message": str(e)}), 403
+    finally:
+        db.close()
 
 @library_bp.delete('/<int:content_id>')
-def remove_from_library(content_id):
+def delete_content(content_id):
     user_id = session.get('user_id')
     if not user_id:
-        return jsonify({"message": "Not authenticated"}), 401
+        return jsonify({"message": "No autenticado"}), 401
 
-    library_service = LibraryService(catalog_service, user_id)
-    library_service.remove_from_library(content_id)
-    return jsonify({"message": "Content removed from library"}), 200
-
-@library_bp.get('/<int:content_id>')
-def get_library_item(content_id):
-    user_id = session.get('user_id')
-    if not user_id:
-        return jsonify({"message": "Not authenticated"}), 401
-
-    library_service = LibraryService(catalog_service, user_id)
+    db = next(get_db())
+    service = LibraryService(db)
+    
     try:
-        content = library_service.get_full_info(content_id)
-        return jsonify(content), 200
-    except ValueError:
-        return jsonify({"message": "Content not found"}), 404
+        service.delete_content(user_id, content_id)
+        return jsonify({"message": "Contenido eliminado"}), 200
+    except ValueError as e:
+        return jsonify({"message": str(e)}), 404
+    except PermissionError as e:
+        return jsonify({"message": str(e)}), 403
+    finally:
+        db.close()
