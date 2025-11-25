@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { X, Save, Film, Tv } from 'lucide-react';
+import { X, Save, Film, Tv, Star } from 'lucide-react';
 
 export default function AddEditForm({ media, onSave, onCancel, catalog }) {
   const [formData, setFormData] = useState({
@@ -10,6 +10,7 @@ export default function AddEditForm({ media, onSave, onCancel, catalog }) {
     poster: '',
     description: '',
     rating: 0,
+    review: '',
     currentSeason: 1,
     currentEpisode: 1,
     totalEpisodes: 10,
@@ -17,6 +18,8 @@ export default function AddEditForm({ media, onSave, onCancel, catalog }) {
 
   const [suggestions, setSuggestions] = useState([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
+
+  const [error, setError] = useState('');
 
   useEffect(() => {
     if (media) {
@@ -26,6 +29,7 @@ export default function AddEditForm({ media, onSave, onCancel, catalog }) {
 
   const handleTitleChange = (value) => {
     setFormData({ ...formData, title: value });
+    if (error) setError('');
 
     if (value.length > 2 && !media) {
       const filtered = catalog.filter((item) =>
@@ -47,13 +51,20 @@ export default function AddEditForm({ media, onSave, onCancel, catalog }) {
       type: item.type,
       poster: item.poster || '',
       description: item.description || '',
+      review: '',
+      rating: 0,
     });
     setShowSuggestions(false);
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    onSave(formData);
+    setError('');
+    try {
+      await onSave(formData);
+    } catch (err) {
+      setError(err.message || 'Error al guardar el contenido');
+    }
   };
 
   return (
@@ -72,6 +83,12 @@ export default function AddEditForm({ media, onSave, onCancel, catalog }) {
         </div>
 
         <form onSubmit={handleSubmit} className="p-6 space-y-6">
+          {error && (
+            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm animate-pulse">
+              {error}
+            </div>
+          )}
+
           <div className="relative">
             <label className="block text-sm font-medium text-slate-700 mb-2">
               Título *
@@ -176,6 +193,47 @@ export default function AddEditForm({ media, onSave, onCancel, catalog }) {
               <option value="completed">Completada</option>
             </select>
           </div>
+
+          {formData.status === 'completed' && (
+            <div className="space-y-4 p-4 bg-green-50 border border-green-200 rounded-lg">
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-2">
+                  Calificación
+                </label>
+                <div className="flex items-center space-x-2">
+                  {[1, 2, 3, 4, 5].map((star) => (
+                    <button
+                      key={star}
+                      type="button"
+                      onClick={() => setFormData({ ...formData, rating: star })}
+                      className="focus:outline-none transition-transform hover:scale-110"
+                    >
+                      <Star
+                        className={`w-8 h-8 ${
+                          star <= formData.rating
+                            ? 'text-yellow-500 fill-yellow-500'
+                            : 'text-slate-300'
+                        }`}
+                      />
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-2">
+                  Reseña personal
+                </label>
+                <textarea
+                  value={formData.review}
+                  onChange={(e) => setFormData({ ...formData, review: e.target.value })}
+                  rows="3"
+                  className="w-full px-4 py-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-slate-900 focus:border-transparent outline-none resize-none"
+                  placeholder="¿Qué te pareció?"
+                />
+              </div>
+            </div>
+          )}
 
           {formData.type === 'series' && (
             <div className="grid grid-cols-3 gap-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">

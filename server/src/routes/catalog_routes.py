@@ -1,20 +1,19 @@
 # CatalogRoutes - Endpoints de catálogo público (GET /api/catalog)
 
 from flask import Blueprint, jsonify
-from server.src.repositories.content_repository import ContentRepository
+from src.services.catalog_service import CatalogService
 
 catalog_bp = Blueprint('catalog', __name__)
-repo = ContentRepository()
+service = CatalogService()
 
 @catalog_bp.get('/')
 def list_catalog():
-    content_list = repo.get_all()
-    return jsonify(content_list), 200
+    return jsonify(service.list_catalog()), 200
 
-@catalog_bp.get('/<int:content_id>')
-def get_catalog_item(content_id):
-    content = repo.get_by_id(content_id)
-    if content:
-        return jsonify(content), 200
+@catalog_bp.get('/<int:item_id>')
+def get_catalog_item(item_id):
+    item = service.get_item(item_id)
+    if item:
+        return jsonify(item), 200
     else:
-        return jsonify({"message": "Content not found"}), 404
+        return jsonify({"message": "Item not found"}), 404

@@ -1,26 +1,6 @@
-import { useState } from 'react';
-import { X, Star, Edit2, Trash2, MessageSquare, Calendar, Clock, CheckCircle2, Play } from 'lucide-react';
+import { X, Star, Edit2, Trash2, Calendar, Clock, CheckCircle2, Play } from 'lucide-react';
 
-export default function DetailView({ media, onClose, onEdit, onDelete, onUpdateRating, onAddComment, onDeleteComment }) {
-  const [rating, setRating] = useState(media.rating || 0);
-  const [hoverRating, setHoverRating] = useState(0);
-  const [comment, setComment] = useState('');
-  const [showCommentForm, setShowCommentForm] = useState(false);
-
-  const handleRatingClick = (value) => {
-    setRating(value);
-    onUpdateRating(media.id, value);
-  };
-
-  const handleAddComment = (e) => {
-    e.preventDefault();
-    if (comment.trim()) {
-      onAddComment(media.id, comment);
-      setComment('');
-      setShowCommentForm(false);
-    }
-  };
-
+export default function DetailView({ media, onClose, onEdit, onDelete }) {
   const getStatusConfig = (status) => {
     switch (status) {
       case 'completed':
@@ -121,24 +101,30 @@ export default function DetailView({ media, onClose, onEdit, onDelete, onUpdateR
                 <h3 className="font-semibold text-slate-900">Mi calificación</h3>
                 <div className="flex items-center space-x-1">
                   {[1, 2, 3, 4, 5].map((value) => (
-                    <button
+                    <div
                       key={value}
-                      onClick={() => handleRatingClick(value)}
-                      onMouseEnter={() => setHoverRating(value)}
-                      onMouseLeave={() => setHoverRating(0)}
-                      className="transition-transform hover:scale-110"
+                      className="transition-transform"
                     >
                       <Star
                         className={`w-8 h-8 ${
-                          value <= (hoverRating || rating)
+                          value <= media.rating
                             ? 'text-yellow-500 fill-yellow-500'
                             : 'text-slate-300'
                         }`}
                       />
-                    </button>
+                    </div>
                   ))}
                 </div>
               </div>
+
+              {media.review && (
+                <div className="space-y-2">
+                  <h3 className="font-semibold text-slate-900">Mi Reseña</h3>
+                  <div className="bg-slate-50 rounded-lg p-4 border border-slate-200">
+                    <p className="text-slate-700 leading-relaxed italic">"{media.review}"</p>
+                  </div>
+                </div>
+              )}
 
               <div className="flex space-x-3 pt-4">
                 <button
@@ -165,67 +151,6 @@ export default function DetailView({ media, onClose, onEdit, onDelete, onUpdateR
           </div>
 
           <div className="border-t border-slate-200 pt-6">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-xl font-bold text-slate-900 flex items-center space-x-2">
-                <MessageSquare className="w-5 h-5" />
-                <span>Mis comentarios</span>
-              </h3>
-              <button
-                onClick={() => setShowCommentForm(!showCommentForm)}
-                className="px-4 py-2 bg-slate-900 text-white rounded-lg font-medium hover:bg-slate-800 transition-colors text-sm"
-              >
-                {showCommentForm ? 'Cancelar' : 'Agregar comentario'}
-              </button>
-            </div>
-
-            {showCommentForm && (
-              <form onSubmit={handleAddComment} className="mb-6">
-                <textarea
-                  value={comment}
-                  onChange={(e) => setComment(e.target.value)}
-                  placeholder="Escribe tu comentario..."
-                  rows="3"
-                  className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-slate-900 focus:border-transparent outline-none resize-none mb-2"
-                />
-                <button
-                  type="submit"
-                  className="px-4 py-2 bg-gradient-to-r from-green-600 to-green-700 text-white rounded-lg font-medium hover:from-green-700 hover:to-green-800 transition-all"
-                >
-                  Publicar
-                </button>
-              </form>
-            )}
-
-            {media.comments && media.comments.length > 0 ? (
-              <div className="space-y-4">
-                {media.comments.map((c) => (
-                  <div key={c.id} className="bg-slate-50 rounded-lg p-4 border border-slate-200">
-                    <div className="flex items-start justify-between">
-                      <div className="flex-1">
-                        <p className="text-slate-700 leading-relaxed">{c.text}</p>
-                        <span className="text-xs text-slate-500 mt-2 block">
-                          {new Date(c.date).toLocaleDateString('es-ES', {
-                            year: 'numeric',
-                            month: 'long',
-                            day: 'numeric',
-                          })}
-                        </span>
-                      </div>
-                      <button
-                        onClick={() => onDeleteComment(media.id, c.id)}
-                        className="ml-4 p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <p className="text-slate-500 text-center py-8">
-                No hay comentarios todavía. ¡Sé el primero en agregar uno!
-              </p>
-            )}
           </div>
         </div>
       </div>

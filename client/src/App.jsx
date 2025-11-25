@@ -1,18 +1,64 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Layout from './components/Layout';
 import LibraryView from './components/LibraryView';
 import CatalogView from './components/CatalogView';
 import AddEditForm from './components/AddEditForm';
 import DetailView from './components/DetailView';
-import { mockCatalog, initialUserMedia } from './data/mockData';
+import LoginForm from './components/LoginForm';
+import { getCatalog } from './api/catalog';
+import { login, register, logout, checkAuth } from './api/auth';
+import { getLibrary, addContent, updateContent, deleteContent } from './api/library';
 
 function App() {
+  // Estado de autenticación
+  const [currentUser, setCurrentUser] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
+
+  // Estados existentes
   const [currentView, setCurrentView] = useState('library');
-  const [userMedia, setUserMedia] = useState(initialUserMedia);
+  const [userMedia, setUserMedia] = useState([]);
+  const [catalog, setCatalog] = useState([]);
   const [selectedMedia, setSelectedMedia] = useState(null);
   const [showForm, setShowForm] = useState(false);
   const [showDetail, setShowDetail] = useState(false);
   const [editingMedia, setEditingMedia] = useState(null);
+
+  // Verificar sesión al cargar
+  useEffect(() => {
+    const initAuth = async () => {
+      try {
+        const user = await checkAuth();
+        if (user) {
+          setCurrentUser(user);
+          fetchLibrary();
+        }
+      } catch (error) {
+        console.log("No session found");
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    initAuth();
+    fetchCatalog();
+  }, []);
+
+  const fetchLibrary = async () => {
+    try {
+      const library = await getLibrary();
+      setUserMedia(library);
+    } catch (error) {
+      console.error("Error fetching library:", error);
+    }
+  };
+
+  const fetchCatalog = async () => {
+    try {
+      const data = await getCatalog();
+      setCatalog(data);
+    } catch (error) {
+      console.error("Error fetching catalog:", error);
+    }
+  };
 
   const handleViewChange = (view) => {
     if (view === 'add') {
@@ -23,37 +69,43 @@ function App() {
     }
   };
 
-  const handleAddFromCatalog = (catalogItem) => {
-    const newMedia = {
-      ...catalogItem,
-      id: `user-${Date.now()}`,
-      status: 'pending',
-      rating: 0,
-      comments: [],
-      currentSeason: 1,
-      currentEpisode: 1,
-      totalEpisodes: 10,
-    };
-    setUserMedia([...userMedia, newMedia]);
+  const handleAddFromCatalog = async (catalogItem) => {
+    try {
+      const newMediaData = {
+        ...catalogItem,
+        status: 'pending',
+        rating: 0,
+        current_season: 1,
+        current_episode: 1,
+        total_episodes: catalogItem.totalEpisodes || 10, // Adjust based on catalog data
+      };
+      const newMedia = await addContent(newMediaData);
+      setUserMedia([...userMedia, newMedia]);
+    } catch (error) {
+      console.error("Error adding from catalog:", error);
+    }
   };
 
-  const handleSaveMedia = (formData) => {
-    if (editingMedia) {
-      setUserMedia(
-        userMedia.map((m) =>
-          m.id === editingMedia.id ? { ...formData, id: editingMedia.id } : m
-        )
-      );
-    } else {
-      const newMedia = {
-        ...formData,
-        id: `user-${Date.now()}`,
-        comments: [],
-      };
-      setUserMedia([...userMedia, newMedia]);
+  const handleSaveMedia = async (formData) => {
+    try {
+      if (editingMedia) {
+        const updatedMedia = await updateContent(editingMedia.id, formData);
+        setUserMedia(
+          userMedia.map((m) =>
+            m.id === editingMedia.id ? updatedMedia : m
+          )
+        );
+      } else {
+        const newMedia = await addContent(formData);
+        setUserMedia([...userMedia, newMedia]);
+      }
+      setShowForm(false);
+      setEditingMedia(null);
+    } catch (error) {
+      console.error("Error saving media:", error);
+      const message = error.response?.data?.message || error.message;
+      throw new Error(message);
     }
-    setShowForm(false);
-    setEditingMedia(null);
   };
 
   const handleEdit = (media) => {
@@ -62,8 +114,17 @@ function App() {
     setShowDetail(false);
   };
 
-  const handleDelete = (id) => {
-    setUserMedia(userMedia.filter((m) => m.id !== id));
+  const handleDelete = async (id) => {
+    try {
+      await deleteContent(id);
+      setUserMedia(userMedia.filter((m) => m.id !== id));
+      if (selectedMedia && selectedMedia.id === id) {
+        setShowDetail(false);
+        setSelectedMedia(null);
+      }
+    } catch (error) {
+      console.error("Error deleting media:", error);
+    }
   };
 
   const handleView = (media) => {
@@ -71,56 +132,81 @@ function App() {
     setShowDetail(true);
   };
 
-  const handleUpdateRating = (id, rating) => {
-    setUserMedia(
-      userMedia.map((m) => (m.id === id ? { ...m, rating } : m))
-    );
-    if (selectedMedia && selectedMedia.id === id) {
-      setSelectedMedia({ ...selectedMedia, rating });
+  const userMediaIds = userMedia.map((m) => m.id);
+
+  // Funciones de autenticación
+  const handleLogin = async (usernameOrEmail, emailOrPassword, passwordOrUndefined, isRegistering) => {
+    setIsLoading(true);
+    
+    try {
+      if (isRegistering) {
+        // Registering: username, email, password, true
+        const username = usernameOrEmail;
+        const email = emailOrPassword;
+        const password = passwordOrUndefined;
+        
+        if (username && email && password) {
+          await register(username, email, password);
+          await login(email, password);
+          const user = await checkAuth();
+          setCurrentUser(user);
+          fetchLibrary();
+          console.log('Usuario registrado exitosamente');
+        } else {
+          throw new Error('Todos los campos son requeridos');
+        }
+      } else {
+        // Login: email, password, false
+        const email = usernameOrEmail;
+        const password = emailOrPassword;
+        
+        if (email && password) {
+          await login(email, password);
+          const user = await checkAuth();
+          setCurrentUser(user);
+          fetchLibrary();
+          console.log('Login exitoso');
+        } else {
+          throw new Error('Email o contraseña inválidos');
+        }
+      }
+    } catch (error) {
+      console.error('Error de autenticación:', error);
+      const message = error.response?.data?.message || error.message;
+      throw new Error(message);
+    } finally {
+      setIsLoading(false);
     }
   };
 
-  const handleAddComment = (id, text) => {
-    const newComment = {
-      id: `comment-${Date.now()}`,
-      text,
-      date: new Date().toISOString(),
-    };
-    setUserMedia(
-      userMedia.map((m) =>
-        m.id === id
-          ? { ...m, comments: [...(m.comments || []), newComment] }
-          : m
-      )
-    );
-    if (selectedMedia && selectedMedia.id === id) {
-      setSelectedMedia({
-        ...selectedMedia,
-        comments: [...(selectedMedia.comments || []), newComment],
-      });
+  const handleLogout = async () => {
+    try {
+      await logout();
+      setCurrentUser(null);
+      setUserMedia([]);
+      setCurrentView('library');
+    } catch (error) {
+      console.error("Error logging out", error);
     }
   };
 
-  const handleDeleteComment = (mediaId, commentId) => {
-    setUserMedia(
-      userMedia.map((m) =>
-        m.id === mediaId
-          ? { ...m, comments: m.comments.filter((c) => c.id !== commentId) }
-          : m
-      )
-    );
-    if (selectedMedia && selectedMedia.id === mediaId) {
-      setSelectedMedia({
-        ...selectedMedia,
-        comments: selectedMedia.comments.filter((c) => c.id !== commentId),
-      });
-    }
-  };
+  if (isLoading) {
+    return <div className="flex items-center justify-center h-screen">Cargando...</div>;
+  }
 
-  const userMediaIds = userMedia.map((m) => m.id.replace('user-', 'cat-'));
+  // Si no hay usuario autenticado, mostrar LoginForm
+  if (!currentUser) {
+    return <LoginForm onLogin={handleLogin} />;
+  }
 
+  // Si hay usuario autenticado, mostrar la aplicación normal
   return (
-    <Layout currentView={currentView} onViewChange={handleViewChange}>
+    <Layout 
+      currentView={currentView} 
+      onViewChange={handleViewChange}
+      currentUser={currentUser}
+      onLogout={handleLogout}
+    >
       {currentView === 'library' && (
         <LibraryView
           mediaList={userMedia}
@@ -132,9 +218,9 @@ function App() {
 
       {currentView === 'trending' && (
         <CatalogView
-          catalog={mockCatalog}
+          catalog={catalog}
           onAddFromCatalog={handleAddFromCatalog}
-          userMediaIds={userMediaIds}
+          userMedia={userMedia}
         />
       )}
 
@@ -146,7 +232,7 @@ function App() {
             setShowForm(false);
             setEditingMedia(null);
           }}
-          catalog={mockCatalog}
+          catalog={catalog}
         />
       )}
 
@@ -159,9 +245,6 @@ function App() {
           }}
           onEdit={handleEdit}
           onDelete={handleDelete}
-          onUpdateRating={handleUpdateRating}
-          onAddComment={handleAddComment}
-          onDeleteComment={handleDeleteComment}
         />
       )}
     </Layout>

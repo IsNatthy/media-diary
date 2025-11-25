@@ -1,10 +1,24 @@
 # Modelo Series - Serie de TV, hereda de Content (campos: current_season, current_episode, total_episodes)
-
-from server.src.models.content import Content
+from sqlalchemy import Column, Integer, ForeignKey
+from src.models.content import Content
 
 class Series(Content):
-    def __init__(self, id, title, year, type, genre, state, current_season, current_episode, total_episodes):
-        super().__init__(id, title, year, "series", genre, state)
-        self.current_season = current_season
-        self.current_episode = current_episode
-        self.total_episodes = total_episodes
+    __tablename__ = "series"
+
+    id = Column(Integer, ForeignKey("contents.id"), primary_key=True)
+    current_season = Column(Integer, default=1)
+    current_episode = Column(Integer, default=1)
+    total_episodes = Column(Integer, nullable=True)
+
+    __mapper_args__ = {
+        "polymorphic_identity": "series",
+    }
+
+    def to_dict(self):
+        data = super().to_dict()
+        data.update({
+            "currentSeason": self.current_season, # Frontend expects camelCase
+            "currentEpisode": self.current_episode,
+            "totalEpisodes": self.total_episodes
+        })
+        return data

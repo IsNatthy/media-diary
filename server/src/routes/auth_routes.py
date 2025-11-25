@@ -1,64 +1,75 @@
 # AuthRoutes - Endpoints de autenticación (POST /auth/register, /auth/login, /auth/logout, GET /auth/me)
 
 from flask import Blueprint, request, jsonify, session
-from server.src.repositories.user_repository import UserRepository
-from server.src.models.user import User
+from src.config.database import get_db
+from src.services.auth_service import AuthService
 
 auth_bp = Blueprint('auth', __name__)
-repo = UserRepository()
 
 @auth_bp.post('/register')
 def register():
     data = request.json
-    username = data['username']
-    email = data['email']
-    password = data['password']
+    username = data.get('username')
+    email = data.get('email')
+    password = data.get('password')
     
-    existing_user = repo.find_by_username(username)
-    if existing_user:
-        return jsonify({"message": "Username already exists"}), 400
+    if not username or not email or not password:
+        return jsonify({"message": "Faltan datos requeridos"}), 400
     
-    repo.create(username, email, password)
-    return jsonify({"message": "User registered successfully"}), 201
+    db = next(get_db())
+    service = AuthService(db)
+    
+    try:
+        user = service.register(username, email, password)
+        return jsonify({"message": "Usuario registrado exitosamente", "user": user.to_dict()}), 201
+    except ValueError as e:
+        return jsonify({"message": str(e)}), 400
+    finally:
+        db.close()
 
 @auth_bp.post('/login')
 def login():
     data = request.json
-    username = data['username']
-    password = data['password']
+    email = data.get('email')
+    password = data.get('password')
     
-    user_row = repo.find_by_username(username)
-    if not user_row or user_row[3] != password:
-        return jsonify({"message": "Invalid credentials"}), 401
+    if not email or not password:
+        return jsonify({"message": "Email y contraseña son requeridos"}), 400
     
-    session['user_id'] = user_row[0]
-    return jsonify({"message": "Login successful"}), 200
+    db = next(get_db())
+    service = AuthService(db)
+    
+    try:
+        user = service.login(email, password)
+        if not user:
+            return jsonify({"message": "Credenciales inválidas"}), 401
+        
+        session['user_id'] = user.id
+        return jsonify({"message": "Login exitoso", "user": user.to_dict()}), 200
+    finally:
+        db.close()
 
 @auth_bp.post('/logout')
 def logout():
     session.pop('user_id', None)
-    return jsonify({"message": "Logout successful"}), 200
+    return jsonify({"message": "Logout exitoso"}), 200
 
 @auth_bp.get('/me')
 def me():
     user_id = session.get('user_id')
     if not user_id:
-        return jsonify({"message": "Not authenticated"}), 401
+        return jsonify({"message": "No autenticado"}), 401
     
-    # find_by_username might be wrong if user_id is int.
-    # But repo.find_by_username(username) is used in login.
-    # Here we pass user_id.
-    # I should check UserRepository.
-    # But I will leave logic as is, just fixing imports.
-    # Wait, if I pass user_id to find_by_username, it might fail if it expects string or query is WHERE username=?
-    # I'll check UserRepository later.
-    user_row = repo.find_by_id(user_id) 
-    if not user_row:
-        return jsonify({"message": "User not found"}), 404
+    db = next(get_db())
+    from src.repositories.user_repository import UserRepository
+    repo = UserRepository(db)
     
-    user = {
-        "id": user_row[0],
-        "username": user_row[1],
-        "email": user_row[2]
-    }
-    return jsonify(user), 200
+    try:
+        user = repo.find_by_id(user_id)
+        if not user:
+            session.pop('user_id', None)
+            return jsonify({"message": "Usuario no encontrado"}), 404
+        
+        return jsonify(user.to_dict()), 200
+    finally:
+        db.close()

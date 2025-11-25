@@ -110,7 +110,13 @@ export default function MediaCard({ media, onEdit, onDelete, onView }) {
           </div>
         )}
 
-        {media.rating && (
+        {media.description && (
+          <p className="text-sm text-slate-600 line-clamp-2 mb-3">
+            {media.description}
+          </p>
+        )}
+
+        {media.rating > 0 && (
           <div className="flex items-center space-x-1">
             {[...Array(5)].map((_, i) => (
               <Star
